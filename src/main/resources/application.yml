@@ -1,0 +1,91 @@
+spring:
+  application:
+    name: agent-harness
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    # Default: embedded H2 (file-free). Override with SPRING_DATASOURCE_URL=jdbc:postgresql://... for prod.
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:harness;DB_CLOSE_DELAY=-1}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  sql:
+    init:
+      mode: always
+
+server:
+  port: ${PORT:8080}
+
+harness:
+  agent:
+    name: FinBot
+    system-prompt: |
+      You are FinBot, a finance assistant for analysts.
+      Ground every figure you report in the company's filings: call search_filings first and cite the
+      source document for each number. Use the calculator for any arithmetic (growth rates, margins,
+      ratios). If the filings do not contain the answer, say so plainly instead of estimating.
+      You provide factual analysis of reported results only, not personalized investment advice.
+
+  # Hard limits (article values) - stop runaway loops and spend.
+  limits:
+    max-iterations: 50
+    max-tokens: 8192
+    timeout-seconds: 1800
+    daily-token-budget-per-user: 5000000
+    tool-timeout-seconds: 60
+
+  models:
+    provider: ${HARNESS_MODEL_PROVIDER:anthropic}   # anthropic | stub
+    refusal-fallback: true
+    routes:
+      agent:                       # main reasoning + tool-use loop
+        model: claude-opus-5-5
+        effort: high
+      fallback:                    # failover on overload / 429 / 5xx
+        model: claude-sonnet-5-5
+        effort: medium
+      summarize:                   # cheap, high-volume session summarization
+        model: claude-haiku-4-5
+    pricing:                       # USD per 1M tokens
+      claude-opus-5-5:   { input: 4.00, output: 20.00 }
+      claude-sonnet-5-5: { input: 2.00, output: 10.00 }
+      claude-haiku-4-5:  { input: 1.00, output: 5.00 }
+
+  tools:
+    allowed: []                    # empty = all registered tools; list names to restrict
+    retrieval-top-k: 4
+
+  mcp:
+    servers:
+      - name: filings
+        url: ${FILINGS_MCP_URL:http://filings-mcp:8000/mcp}
+        enabled: ${FILINGS_MCP_ENABLED:false}
+      - name: sandbox
+        url: ${CODE_SANDBOX_MCP_URL:http://code-sandbox:8000/mcp}
+        enabled: ${CODE_SANDBOX_MCP_ENABLED:false}
+
+  guardrails:
+    max-input-chars: 20000
+    redact-pii: true
+    blocked-patterns:
+      - "ignore (all|any|previous) (instructions|rules)"
+      - "insider (information|tip)"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      # Set OTEL_EXPORTER_OTLP_TRACES_ENDPOINT, e.g. http://otel-collector:4318/v1/traces
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:}
+      export:
+        enabled: ${OTEL_TRACES_EXPORT_ENABLED:false}
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

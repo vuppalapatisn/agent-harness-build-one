@@ -1,0 +1,4 @@
+# Offline mode: deterministic stub model, no API key, no cost. Run with --spring.profiles.active=stub
+harness:
+  models:
+    provider: stub

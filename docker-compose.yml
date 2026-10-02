@@ -1,0 +1,27 @@
+# Local "self-managed" stack: harness + Postgres checkpointing + OpenTelemetry collector.
+#   ANTHROPIC_API_KEY=... docker compose up --build
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: harness
+      POSTGRES_USER: harness
+      POSTGRES_PASSWORD: harness
+    ports: ["5432:5432"]
+
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    ports: ["4318:4318"]
+
+  harness:
+    build: .
+    depends_on: [postgres, otel-collector]
+    ports: ["8080:8080"]
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      HARNESS_MODEL_PROVIDER: ${HARNESS_MODEL_PROVIDER:-anthropic}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/harness
+      SPRING_DATASOURCE_USERNAME: harness
+      SPRING_DATASOURCE_PASSWORD: harness
+      OTEL_TRACES_EXPORT_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
