@@ -51,6 +51,8 @@ cascade, and it keeps a single prompt cache.
 
 ## Step by step
 
+> On a Mac? Follow **[RUN_ON_MAC.md](RUN_ON_MAC.md)**, which covers Homebrew, the JDK, the Keychain-stored API key, and Docker/Colima.
+
 ### 1. Prerequisites
 - JDK 21 and Maven 3.9+
 - An Anthropic API key, needed only for real model calls: <https://console.anthropic.com>
