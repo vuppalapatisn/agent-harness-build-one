@@ -41,7 +41,7 @@ cd agent-harness-build-one
 ```bash
 mvn verify
 ```
-You should see `Tests run: 16, Failures: 0` and `BUILD SUCCESS`. The tests use the built-in stub model, so they cost nothing.
+You should see `Tests run: 17, Failures: 0` and `BUILD SUCCESS`. The tests use the built-in stub model, so they cost nothing.
 
 ## 4. Run without an API key (stub model)
 ```bash
@@ -52,6 +52,11 @@ Wait for `Started AgentHarnessApplication`. Then open a **second Terminal tab** 
 curl -s -X POST localhost:8080/api/v1/agent/invoke -H 'Content-Type: application/json' -H 'X-User-Id: alice' -d '{"message":"What was gross margin in Q2 FY2026?"}' | jq .
 ```
 In stub mode, the answer is the matching filing passages, prefixed with `[stub:claude-opus-5-5]`.
+
+Prefer a browser? Open the Swagger UI and use **Try it out** on any endpoint:
+```bash
+open http://localhost:8080/swagger-ui.html
+```
 
 Press **Ctrl+C** in the first tab to stop the server.
 

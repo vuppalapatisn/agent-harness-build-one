@@ -9,6 +9,9 @@ A self-managed **agent harness** in Java/Spring Boot, built from the InfoQ artic
 The example agent is **FinBot**, a finance assistant that answers questions from quarterly filings.
 The filings are fictional sample data in `src/main/resources/filings/`.
 
+**API docs:** with the app running, open [Swagger UI](http://localhost:8080/swagger-ui.html)
+(raw spec: [`/v3/api-docs`](http://localhost:8080/v3/api-docs)).
+
 ## How the article maps to this code
 
 | Article concept | Where it lives |
@@ -73,7 +76,15 @@ export ANTHROPIC_API_KEY=sk-ant-...      # PowerShell: $env:ANTHROPIC_API_KEY="s
 mvn spring-boot:run
 ```
 
-### 5. Call the agent
+### 5. Explore the API in Swagger UI
+With the app running, open **<http://localhost:8080/swagger-ui.html>**. Every endpoint is documented
+there, and you can call it directly with **Try it out** (set `X-User-Id` to any name, such as `alice`).
+
+- Swagger UI: <http://localhost:8080/swagger-ui.html>
+- OpenAPI 3 spec (JSON): <http://localhost:8080/v3/api-docs>
+- OpenAPI 3 spec (YAML): <http://localhost:8080/v3/api-docs.yaml>, for importing into Postman, Insomnia, or a client generator
+
+### 6. Call the agent from the command line
 ```bash
 curl -s -X POST localhost:8080/api/v1/agent/invoke \
   -H 'Content-Type: application/json' -H 'X-User-Id: alice' \
@@ -85,21 +96,23 @@ To continue the conversation, pass `"sessionId"` back in the next request.
 
 | Endpoint | Purpose |
 |---|---|
+| `GET  /swagger-ui.html` | Interactive API docs (Swagger UI) |
+| `GET  /v3/api-docs` | OpenAPI 3 spec |
 | `POST /api/v1/agent/invoke` | Run the agent (`{sessionId?, message}`) |
 | `GET  /api/v1/sessions/{id}` | Conversation history (checkpoint) |
 | `POST /api/v1/sessions/{id}/summary` | Summarize the session with Haiku 4.5 |
 | `GET  /api/v1/budget` | Remaining daily token budget for the caller |
 | `GET  /actuator/prometheus` | `gen_ai_client_token_usage_total`, `gen_ai_client_operation_duration_*`, `harness_tool_duration_*`, `harness_model_failover_total` |
 
-All endpoints except actuator require the `X-User-Id` header. In production, put an authenticating
+All `/api/v1` endpoints require the `X-User-Id` header. In production, put an authenticating
 gateway or Spring Security OAuth2 resource server in front of the API.
 
-### 6. Production-like stack (Postgres + OpenTelemetry collector)
+### 7. Production-like stack (Postgres + OpenTelemetry collector)
 ```bash
 ANTHROPIC_API_KEY=sk-ant-... docker compose up --build
 ```
 
-### 7. Plug in MCP servers
+### 8. Plug in MCP servers
 Turn on the article's remote MCP servers with environment variables. Their tools appear to the model
 as `filings__<tool>` and `sandbox__<tool>`:
 ```bash
@@ -109,7 +122,7 @@ mvn spring-boot:run
 ```
 If a server can't be reached, the harness logs a warning and starts without it.
 
-### 8. CI/CD (GitHub Actions)
+### 9. CI/CD (GitHub Actions)
 - `.github/workflows/ci.yml` runs on every push and PR. It builds and tests with the stub model (no
   API cost) and uploads the jar. On `main`, it also builds and pushes a Docker image to
   `ghcr.io/<owner>/agent-harness-build-one`.

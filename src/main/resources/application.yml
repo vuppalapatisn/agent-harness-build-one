@@ -71,6 +71,15 @@ harness:
       - "ignore (all|any|previous) (instructions|rules)"
       - "insider (information|tip)"
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    try-it-out-enabled: true
+    operations-sorter: method
+  paths-to-match: /api/**
+
 management:
   endpoints:
     web:

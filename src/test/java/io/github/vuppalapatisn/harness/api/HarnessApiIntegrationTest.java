@@ -83,6 +83,17 @@ class HarnessApiIntegrationTest {
     }
 
     @Test
+    void servesOpenApiSpecAndSwaggerUi() throws Exception {
+        mvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.info.title").value("Agent Harness API - FinBot"))
+                .andExpect(jsonPath("$.paths['/api/v1/agent/invoke'].post.summary").value("Run the agent"))
+                .andExpect(jsonPath("$.paths['/actuator/health']").doesNotExist());
+        mvc.perform(get("/swagger-ui/index.html"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void exposesGenAiMetrics() throws Exception {
         invoke("dave", null, "net income Q1");
         mvc.perform(get("/actuator/metrics/gen_ai.client.token.usage"))
